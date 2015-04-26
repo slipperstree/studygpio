@@ -19,6 +19,8 @@ for i in range(0, 10):
 	time.sleep(0.5)
 	# 让GPIO14输出低电平（LED灯灭）
 	RPi.GPIO.output(14, False)
+	# 持续一段时间
+	time.sleep(0.5)
 
 # 最后清理GPIO口（不做也可以，建议每次程序结束时清理一下，好习惯）
 RPi.GPIO.cleanup()
