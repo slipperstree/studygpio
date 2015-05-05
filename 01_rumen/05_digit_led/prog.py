@@ -151,13 +151,13 @@ def showDigit(no, num, showDotPoint):
 try:
 	while True:
 		time.sleep(0.005)
-		showDigit(1, 3, False)
+		showDigit(1, int(time.strftime("%H",time.localtime(time.time()))) / 10, False)
 		time.sleep(0.005)
-		showDigit(2, 5, True)
+		showDigit(2, int(time.strftime("%H",time.localtime(time.time()))) % 10, True)
 		time.sleep(0.005)
-		showDigit(3, 2, False)
+		showDigit(3, int(time.strftime("%M",time.localtime(time.time()))) / 10, False)
 		time.sleep(0.005)
-		showDigit(4, 8, False)
+		showDigit(4, int(time.strftime("%M",time.localtime(time.time()))) % 10, False)
 
 except KeyboardInterrupt:
 	pass
