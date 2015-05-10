@@ -1,5 +1,6 @@
 #include <wiringPi.h>
 #include <unistd.h>
+#include <time.h>
 
 // 定义单个数码管各段led对应的GPIO口
 // 使用命令 "gpio readall" 来获取当前pi版本对应的各引脚的wiringPi和BCM的编号
@@ -61,6 +62,9 @@
 // 指定no(1-4)号数码管显示数字num(0-9)，第三个参数是显示不显示小数点（1/0）
 void showDigit(int no, int num, int showDotPoint);
 
+time_t now;
+struct tm *tm_now;
+
 int main (void) {
   wiringPiSetup () ;
 
@@ -88,27 +92,31 @@ int main (void) {
 
   for (; ; )
   {
+    time(&now);
+    tm_now=localtime(&now);
+
     // 按钮按下时显示日期，否则显示时间
     // 为了区别左右的数字，让第二个数码管的小数点显示出来
     //（本来应该是一个冒号，我们这个数码管没有，就用小数点代替了）
     if (digitalRead(btn) == HIGH) {
       usleep(t);
-      showDigit(1, 1, FALSE);
+      showDigit(1, tm_now->tm_hour / 10, FALSE);
       usleep(t);
-      showDigit(2, 2, TRUE);
+      showDigit(2, tm_now->tm_hour % 10, TRUE);
       usleep(t);
-      showDigit(3, 3, FALSE);
+      showDigit(3, tm_now->tm_min / 10, FALSE);
       usleep(t);
-      showDigit(4, 4, FALSE);
+      showDigit(4, tm_now->tm_min % 10, FALSE);
     } else {
+      // 取得的月份和日期都是从0开始的，所以显示前需要加1
       usleep(t);
-      showDigit(1, 5, FALSE);
+      showDigit(1, (tm_now->tm_mon+1) / 10, FALSE);
       usleep(t);
-      showDigit(2, 6, TRUE);
+      showDigit(2, (tm_now->tm_mon+1) % 10, TRUE);
       usleep(t);
-      showDigit(3, 7, FALSE);
+      showDigit(3, (tm_now->tm_mday+1) / 10, FALSE);
       usleep(t);
-      showDigit(4, 8, FALSE);
+      showDigit(4, (tm_now->tm_mday+1) % 10, FALSE);
     }
   }
   return 0 ;
