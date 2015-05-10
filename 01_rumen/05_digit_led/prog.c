@@ -2,8 +2,10 @@
 #include <unistd.h>
 
 // 定义单个数码管各段led对应的GPIO口
-// use "gpio readall" to get pin number in wiringPi(not BCM)
-// for pi2 the result is:
+// 使用命令 "gpio readall" 来获取当前pi版本对应的各引脚的wiringPi和BCM的编号
+// 再本程序中应该使用wiringPi编号
+// 我的pi2 Mode B执行结果如下：（wPi列就是wiringPi编号）
+// 之前Python版本的代码使用的是BCM编号，所以在不改变硬件接线的情况下，我们需要把原来BCM编号改成对应的wiringPi编号。
 /* 
  +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+
  | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
@@ -33,30 +35,28 @@
  +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+
 */
 
-#define LED_A 25
-#define LED_B 24
-#define LED_C 23
-#define LED_D 22
-#define LED_E 21
-#define LED_F 14
-#define LED_G 13
-#define LED_DP 12
+#define LED_A 25 //BCM：26
+#define LED_B 24 //BCM：19
+#define LED_C 23 //BCM：13
+#define LED_D 22 //BCM：6
+#define LED_E 21 //BCM：5
+#define LED_F 14 //BCM：11
+#define LED_G 13 //BCM：9
+#define LED_DP 12 //BCM：10
 
 // 定义1到4号数码管阳极对应的GPIO口
-#define DIGIT1 26
-#define DIGIT2 27
-#define DIGIT3 28
-#define DIGIT4 29
+#define DIGIT1 26 //BCM：12
+#define DIGIT2 27 //BCM：16
+#define DIGIT3 28 //BCM：20
+#define DIGIT4 29 //BCM：21
 
 // 定义按钮输入的GPIO口
-#define btn 2
+#define btn 2 //BCM：27
 
 #define FALSE 0
 #define TRUE  1
 
-#define t 1000
-
-int i=0;
+#define t 5000 //usleep延时长度（单位um微秒，1000um＝1ms，1000ms＝1s）
 
 // 指定no(1-4)号数码管显示数字num(0-9)，第三个参数是显示不显示小数点（1/0）
 void showDigit(int no, int num, int showDotPoint);
@@ -86,28 +86,28 @@ int main (void) {
   digitalWrite (DIGIT3, HIGH) ;
   digitalWrite (DIGIT4, HIGH) ;
 
-  for (i=0; i<1000; i++)
+  for (; ; )
   {
     // 按钮按下时显示日期，否则显示时间
     // 为了区别左右的数字，让第二个数码管的小数点显示出来
     //（本来应该是一个冒号，我们这个数码管没有，就用小数点代替了）
     if (digitalRead(btn) == HIGH) {
-      //usleep(t);
+      usleep(t);
       showDigit(1, 1, FALSE);
-      //usleep(t);
+      usleep(t);
       showDigit(2, 2, TRUE);
-      //usleep(t);
+      usleep(t);
       showDigit(3, 3, FALSE);
-      //usleep(t);
+      usleep(t);
       showDigit(4, 4, FALSE);
     } else {
-      //usleep(t);
+      usleep(t);
       showDigit(1, 5, FALSE);
-      //usleep(t);
+      usleep(t);
       showDigit(2, 6, TRUE);
-      //usleep(t);
+      usleep(t);
       showDigit(3, 7, FALSE);
-      //usleep(t);
+      usleep(t);
       showDigit(4, 8, FALSE);
     }
   }
