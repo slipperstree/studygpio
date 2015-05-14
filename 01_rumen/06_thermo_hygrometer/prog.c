@@ -68,9 +68,11 @@
 //             “8bit湿度整数数据+8bit湿度小数数据+8bi温度整数数据+8bit温度小数数据”
 //             所得结果的末8位。
 // 温度数据变量
-char wendu = 0;
+unsigned char wendu = 0;
 // 湿度数据变量
-char shidu = 0;
+unsigned char shidu = 0;
+// 为了每分钟自动重取一次数据，记住上一次取数据时的分钟数
+unsigned char lastMin = 60;
 
 // 定义温湿度计的data口连接的gpio口
 #define DATA 7 //BCM: 4
@@ -78,11 +80,11 @@ char shidu = 0;
 // 根据DHT11的硬件时序图定义各种延时所需的时间间隔(单位：微秒)
 // 总线空闲状态为高电平,主机把总线拉低等待DHT11响应,
 // 主机把总线拉低必须大于18毫秒,保证DHT11能检测到起始信号。
-#define t_pi_start 18000
+#define t_pi_start 20000
 
 // 主机发送开始信号结束后,延时等待20-40us后, 读取DHT11的响应信号,
 // 主机发送开始信号后,可以切换到输入模式,或者输出高电平均可, 总线由上拉电阻拉高。
-#define t_pi_start_wait 40
+#define t_pi_start_wait 1000
 
 // DHT11接收到主机的开始信号后,等待主机开始信号结束,然后发送80us低电平响应信号。
 // 总线为低电平,说明DHT11发送响应信号,DHT11发送响应信号后,再把总线拉高80us,
@@ -127,8 +129,6 @@ int main (void) {
   pinMode (btn, INPUT) ;
   pullUpDnControl (btn, PUD_UP) ;
 
-  pinMode (DATA, OUTPUT) ;
-
   digitalWrite (DIGIT1, HIGH) ;
   digitalWrite (DIGIT2, HIGH) ;
   digitalWrite (DIGIT3, HIGH) ;
@@ -139,34 +139,44 @@ int main (void) {
     time(&now);
     tm_now=localtime(&now);
 
-    // 按钮按下时显示日期，否则显示时间
-    // 为了区别左右的数字，让第二个数码管的小数点显示出来
-    //（本来应该是一个冒号，我们这个数码管没有，就用小数点代替了）
+    if (tm_now->tm_min != lastMin)
+    {
+      readDHT11();
+    }
+
+    // 默认显示温度，按钮按下时显示湿度
     if (digitalRead(btn) == HIGH) {
       usleep(t);
-      showDigit(1, tm_now->tm_hour / 10, FALSE);
+      showDigit(1, 0, FALSE);
       usleep(t);
-      showDigit(2, tm_now->tm_hour % 10, TRUE);
+      showDigit(2, 0, FALSE);
       usleep(t);
-      showDigit(3, tm_now->tm_min / 10, FALSE);
+      showDigit(3, wendu / 10, FALSE);
       usleep(t);
-      showDigit(4, tm_now->tm_min % 10, FALSE);
+      showDigit(4, wendu % 10, FALSE);
     } else {
-      // 取得的月份和日期都是从0开始的，所以显示前需要加1
       usleep(t);
-      showDigit(1, (tm_now->tm_mon+1) / 10, FALSE);
+      showDigit(1, 0, FALSE);
       usleep(t);
-      showDigit(2, (tm_now->tm_mon+1) % 10, TRUE);
+      showDigit(2, 0, TRUE);
       usleep(t);
-      showDigit(3, (tm_now->tm_mday+1) / 10, FALSE);
+      showDigit(3, shidu / 10, FALSE);
       usleep(t);
-      showDigit(4, (tm_now->tm_mday+1) % 10, FALSE);
+      showDigit(4, shidu % 10, FALSE);
     }
   }
   return 0 ;
 }
 
 void readDHT11() {
+
+  // 将温度湿度清零
+  shidu = 0;
+  wendu = 0;
+
+  // GPIO口模式设置为输出模式
+  pinMode (DATA, OUTPUT) ;
+
   // 拉低DATA口，输出开始指令（至少持续18ms）
   digitalWrite (DATA, LOW);
   usleep(t_pi_start);
@@ -177,55 +187,94 @@ void readDHT11() {
 
   // 在DATA口被拉回至高电平通知DHT11主机已经准备好接受数据以后，
   // DHT11还会继续等待20-40us左右以后才会开始发送反馈信号，所以我们把这段时间跳过去
-  usleep(t_pi_start_wait);
-
-  // 检查DHT11有没有反馈响应信号（低电平）
-  // 如果此时DATA口不是低电平表示DHT11并没有响应我们的请求，有可能是我们的接线有问题。
-  if (digitalRead(DATA) != LOW) {
-    printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
-    exit();
-  } else {
-    // 这个低电平会持续80us左右，但我们不需要精确计算这个时间
-    // 只要一直循环检查DATA口的电平有没有恢复成高电平即可
-    while (digitalRead(DATA) == LOW) {
-      usleep(1);
+  // 如果长时间（1000us以上）没有低电平的反馈表示有问题，结束程序
+printf("等待DHT11发送反馈信号。\n");
+  int waitTime = 0;
+  while (digitalRead(DATA) == HIGH) {
+    usleep(1);
+    waitTime++;
+    if (waitTime > t_pi_start_wait)
+    {
+      printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
+      exit(1);
     }
   }
-
+printf("DHT11发送了反馈信号。\n");
+  // 这个反馈响应信号的低电平会持续80us左右，但我们不需要精确计算这个时间
+  // 只要一直循环检查DATA口的电平有没有恢复成高电平即可
+  while (digitalRead(DATA) == LOW) {
+    usleep(1);
+  }
+printf("DHT11发送了反馈信号以后拉高信号。\n");
   // 这个持续了80us左右的低电平的反馈信号结束以后，DHT11又会将DATA口拉回高电平并再次持续80us左右
   // 然后才会开始发送真正的数据。所以跟上面一样，我们再做一个循环来检测这一段高电平的结束。
   while (digitalRead(DATA) == HIGH) {
     usleep(1);
   }
-
+printf("40bit的数据传输开始。\n");
   // ######### 40bit的数据传输开始 ##########
-  for (int i = 0; i < 40; ++i)
+  int i = 0;
+  unsigned char bit = 0;
+  for (i = 0; i < 40; i++)
   {
     // 每一个bit的数据（0或者1）总是由一段持续50us的低电平信号开始
     // 跟上面一样我们用循环检测的方式跳过这一段
     while (digitalRead(DATA) == LOW) {
       usleep(1);
     }
-
+printf("持续50us的低电平信号结束。\n");
     // 接下来的高电平持续的时间是判断该bit是0还是1的关键
     // 根据DHT11的说明文档，我们知道 这段高电平持续26us-28us左右的话表示这是数据0
     // 如果这段高电平持续时间为70us左右表示这是数据1
     // 方法1：在高电平开始的时候记下时间，在高电平结束的时候再记一个时间，
     //        通过计算两个时间的间隔就能得知是数据0还是数据1了。
     // 方法2：在高电平开始的以后我们延时40us，然后再次检测DATA口:
-    //        (a) 如果此时DATA口是低电平，表示当前位的数据已经完了并已经进入下一位数据的传输准备阶段（50us）了。
+    //        (a) 如果此时DATA口是低电平，表示当前位的数据已经发送完并进入下一位数据的传输准备阶段（低电平50us）了。
     //        由于数据1的高电平持续时间是70us，所以如果是数据1，此时DATA口应该还是高电平才对，
     //        据此我们可以断言刚才传输的这一位数据是0。
     //        (b) 如果延时40us以后DATA口仍然是高电平，那么我们可以断言这一位数据一定是1了，因为数据0只会持续26us。
-    // 我们这里采用简单易行的方法2（也可以看出硬件在设计信号持续时间上面也是很有讲究的）
-    usleep(40);
+    // 我们这里采用简单易行的方法2（从这里我们也可以看出该硬件在设计信号持续时间上面是很有讲究的）
+    usleep(60);
     if (digitalRead(DATA) == LOW) {
-      
+      bit = 0;
+printf("数据0。\n");
+    } else {
+      bit = 1;
+printf("数据1。\n");
+      // 由于数据1的高电平会持续70us，而我们只等待了40us，所以通过循环检测，继续等待高电平结束
+      while (digitalRead(DATA) == HIGH) {
+        usleep(1);
+      }
     }
-
+printf("第%d位：%d。\n", i, bit);
+    // 湿度的整数数据（40位信号的前8位）
+    if (i < 8)
+    {
+      bit <<= i;
+      shidu |= bit;
+    }
+    // 湿度的小数数据（40位信号的9-16位）
+    // 根据官方文档说明可知，这款DHT11输出的小数位始终为0，所以我们不使用该数据，丢弃
+    else if (i < 16)
+    {
+    }
+    // 温度的整数数据（40位信号的17-24位）
+    else if (i < 24)
+    {
+      bit <<= (i/8);
+      wendu |= bit;
+    }
+    // 温度的小数数据（40位信号的25-32位）
+    // 同湿度小数位，丢弃
+    else if (i < 32)
+    {
+    }
+    // 8位校验数据（40位信号的33-40位）
+    // 可用于检测数据是否接收正确，本文不使用丢弃
+    else 
+    {
+    }
   }
-  
-
 }
 
 void showDigit(int no, int num, int showDotPoint) {
