@@ -95,6 +95,8 @@ unsigned char lastMin = 60;
 #define t_dht11_data_0 26
 #define t_dht11_data_1 70
 
+#define MAXCNT 1000
+
 // 如果读取响应信号为高电平,则DHT11没有响应,请检查线路是否连接正常。
 // 当最后一bit数据传送完毕后，DHT11拉低总线50us,随后总线由上拉电阻拉高进入空闲状态。
 
@@ -168,7 +170,12 @@ int main (void) {
   return 0 ;
 }
 
+int bits[100], data[5];
 void readDHT11() {
+  int i = 0;
+  unsigned char bit = 0;
+  int waitTime = 0;
+  int cnt=0;
 
   // 将温度湿度清零
   shidu = 0;
@@ -176,6 +183,9 @@ void readDHT11() {
 
   // GPIO口模式设置为输出模式
   pinMode (DATA, OUTPUT) ;
+
+  digitalWrite (DATA, HIGH);
+  usleep(500000);  // 500 ms
 
   // 拉低DATA口，输出开始指令（至少持续18ms）
   digitalWrite (DATA, LOW);
@@ -188,41 +198,60 @@ void readDHT11() {
   // 在DATA口被拉回至高电平通知DHT11主机已经准备好接受数据以后，
   // DHT11还会继续等待20-40us左右以后才会开始发送反馈信号，所以我们把这段时间跳过去
   // 如果长时间（1000us以上）没有低电平的反馈表示有问题，结束程序
-printf("等待DHT11发送反馈信号。\n");
-  int waitTime = 0;
+//printf("等待DHT11发送反馈信号。\n");
+  cnt=0;
   while (digitalRead(DATA) == HIGH) {
-    usleep(1);
-    waitTime++;
-    if (waitTime > t_pi_start_wait)
+    cnt++;
+    if (cnt > MAXCNT)
     {
       printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
       exit(1);
     }
   }
-printf("DHT11发送了反馈信号。\n");
+
+//printf("DHT11发送了反馈信号。\n");
   // 这个反馈响应信号的低电平会持续80us左右，但我们不需要精确计算这个时间
   // 只要一直循环检查DATA口的电平有没有恢复成高电平即可
+  cnt=0;
   while (digitalRead(DATA) == LOW) {
-    usleep(1);
+    cnt++;
+    if (cnt > MAXCNT)
+    {
+      printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
+      exit(1);
+    }
   }
-printf("DHT11发送了反馈信号以后拉高信号。\n");
+
+//printf("DHT11发送了反馈信号以后拉高信号。\n");
   // 这个持续了80us左右的低电平的反馈信号结束以后，DHT11又会将DATA口拉回高电平并再次持续80us左右
   // 然后才会开始发送真正的数据。所以跟上面一样，我们再做一个循环来检测这一段高电平的结束。
+  cnt=0;
   while (digitalRead(DATA) == HIGH) {
-    usleep(1);
+    cnt++;
+    if (cnt > MAXCNT)
+    {
+      printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
+      exit(1);
+    }
   }
-printf("40bit的数据传输开始。\n");
+
+// printf("40bit的数据传输开始###########################################\n");
+
   // ######### 40bit的数据传输开始 ##########
-  int i = 0;
-  unsigned char bit = 0;
-  for (i = 0; i < 40; i++)
+  for (i = 0; i < 100; i++)
   {
     // 每一个bit的数据（0或者1）总是由一段持续50us的低电平信号开始
     // 跟上面一样我们用循环检测的方式跳过这一段
+    cnt = 0;
     while (digitalRead(DATA) == LOW) {
-      usleep(1);
+      cnt++;
+      if (cnt > MAXCNT)
+      {
+        printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
+        exit(1);
+      }
     }
-printf("持续50us的低电平信号结束。\n");
+//printf("持续%d的低电平信号结束。\n", cnt);
     // 接下来的高电平持续的时间是判断该bit是0还是1的关键
     // 根据DHT11的说明文档，我们知道 这段高电平持续26us-28us左右的话表示这是数据0
     // 如果这段高电平持续时间为70us左右表示这是数据1
@@ -234,24 +263,40 @@ printf("持续50us的低电平信号结束。\n");
     //        据此我们可以断言刚才传输的这一位数据是0。
     //        (b) 如果延时40us以后DATA口仍然是高电平，那么我们可以断言这一位数据一定是1了，因为数据0只会持续26us。
     // 我们这里采用简单易行的方法2（从这里我们也可以看出该硬件在设计信号持续时间上面是很有讲究的）
-    usleep(60);
-    if (digitalRead(DATA) == LOW) {
-      bit = 0;
-printf("数据0。\n");
-    } else {
-      bit = 1;
-printf("数据1。\n");
-      // 由于数据1的高电平会持续70us，而我们只等待了40us，所以通过循环检测，继续等待高电平结束
-      while (digitalRead(DATA) == HIGH) {
-        usleep(1);
+    cnt=0;
+    while (digitalRead(DATA) == HIGH) {
+      cnt++;
+      if (cnt > MAXCNT)
+      {
+        printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
+        exit(1);
       }
     }
-printf("第%d位：%d。\n", i, bit);
+
+    bits[i] = cnt;
+    printf("bits[%d] = %d \n", i, cnt);
+//printf("持续%d的高电平信号结束。第%d位。\n", cnt, i);
+
+
+/*
+    if (cnt < 200) {
+      bit = 0;
+//printf("数据0。\n");
+    } else {
+      bit = 1;
+//printf("数据1。\n");
+    }
+
     // 湿度的整数数据（40位信号的前8位）
     if (i < 8)
     {
       bit <<= i;
       shidu |= bit;
+
+      if (i==7)
+      {
+        printf("shidu=%d \n", shidu);
+      }
     }
     // 湿度的小数数据（40位信号的9-16位）
     // 根据官方文档说明可知，这款DHT11输出的小数位始终为0，所以我们不使用该数据，丢弃
@@ -263,6 +308,12 @@ printf("第%d位：%d。\n", i, bit);
     {
       bit <<= (i/8);
       wendu |= bit;
+
+      if (i==23)
+      {
+        printf("wendu=%d \n", wendu);
+        //exit(0);
+      }
     }
     // 温度的小数数据（40位信号的25-32位）
     // 同湿度小数位，丢弃
@@ -274,6 +325,7 @@ printf("第%d位：%d。\n", i, bit);
     else 
     {
     }
+*/
   }
 }
 
