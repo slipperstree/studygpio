@@ -190,9 +190,10 @@ void readDHT11() {
   // 拉低DATA口，输出开始指令（至少持续18ms）
   digitalWrite (DATA, LOW);
   usleep(TIME_START);
-
+  digitalWrite (DATA, HIGH);
+  
   // 开始指令输出完毕，切换到输入模式，等待DHT11输出信号。
-  // 由于有上拉电阻的存在，所以DATA口会被拉回到高电平。
+  // 由于有上拉电阻的存在，所以DATA口会维持高电平。
   pinMode (DATA, INPUT);
 
   // 在DATA口被拉回至高电平通知DHT11主机已经准备好接受数据以后，
