@@ -95,7 +95,7 @@ unsigned char lastMin = 60;
 #define t_dht11_data_0 26
 #define t_dht11_data_1 70
 
-#define MAXCNT 1000
+#define MAXCNT 10000
 
 // 如果读取响应信号为高电平,则DHT11没有响应,请检查线路是否连接正常。
 // 当最后一bit数据传送完毕后，DHT11拉低总线50us,随后总线由上拉电阻拉高进入空闲状态。
