@@ -324,13 +324,14 @@ void readDHT11() {
 
     // 用校验和来检查接收数据是否完整
     if (data[4] == (data[0] + data[1] + data[2] + data[3]) & 0xFF ) {
-      printf("校验成功！ %d \n");
+      printf("校验成功！ \n");
 
       // 将湿度，温度数据赋值给显示用的湿度，温度变量
       shidu = data[0];
       wendu = data[2];
       break;
     } else {
+      printf("校验不成功，重新取值！ \n");
       // 校验不成功，重新取值，连续10次取值不成功就放弃。一般连线正确的话连续10次取值出错是不可能的。
       continue;
     }
