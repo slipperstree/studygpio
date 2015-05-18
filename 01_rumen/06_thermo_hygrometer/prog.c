@@ -59,7 +59,7 @@
 
 #define t 5000 //数码管动态扫描的延时长度（单位um微秒，1000um＝1ms，1000ms＝1s）
 
-// ####################################################################################
+// ### 湿温度计DHT11模块 定义START ####################################################################################
 // 一次完整的数据传输为40bit,高位先出。
 // 数据格式:8bit湿度整数数据+8bit湿度小数数据
 //          +8bi温度整数数据+8bit温度小数数据
@@ -77,7 +77,7 @@ int bits[40];
 // 5个数据分别储存湿度整数数据，湿度小数数据，温度整数数据，温度小数数据，校验和数据
 int data[5];
 
-// 为了每分钟自动重取一次数据，记住上一次取数据时的分钟数
+// 为了每分钟自动重取一次数据，记住上一次取数据时的分钟数，初始随便设置一个数值
 int lastMin = 60;
 
 // 定义温湿度计的data口连接的gpio口
@@ -100,23 +100,17 @@ int lastMin = 60;
 
 // 主机发送开始信号结束后,延时等待20-40us后, 读取DHT11的响应信号,
 // 主机发送开始信号后,可以切换到输入模式,或者输出高电平均可, 总线由上拉电阻拉高。
-#define t_pi_start_wait 1000
-
 // DHT11接收到主机的开始信号后,等待主机开始信号结束,然后发送80us低电平响应信号。
 // 总线为低电平,说明DHT11发送响应信号,DHT11发送响应信号后,再把总线拉高80us,
-#define t_dht11_start_resp 80
-
 // 准备发送数据,每一bit数据都以50us低电平时隙开始,高电平的长短定了数据位是0还是1。
-#define t_dht11_data_head 50
-#define t_dht11_data_0 26
-#define t_dht11_data_1 70
 
+// 循环检测高低电平时，如果超过这个值就认为检测失败或者全部数据已经发送完成。
 #define MAXCNT 10000
 
 // 如果读取响应信号为高电平,则DHT11没有响应,请检查线路是否连接正常。
 // 当最后一bit数据传送完毕后，DHT11拉低总线50us,随后总线由上拉电阻拉高进入空闲状态。
 
-// ####################################################################################
+// ### 湿温度计DHT11模块 定义END ####################################################################################
 
 // 指定no(1-4)号数码管显示数字num(0-9)，第三个参数是显示不显示小数点（1/0）
 void showDigit(int no, int num, int showDotPoint);
@@ -165,20 +159,27 @@ int main (void) {
     }
 
     // 默认显示温度，按钮按下时显示湿度
+    // 我们这里只使用两位就够了，如果取得的数字是负数，比如零下1度，
+    // 那么应该先取得正数再送给数码管显示，还要使用数字前面一个数码管来显示一个负号
     if (digitalRead(btn) == HIGH) {
-      usleep(t);
-      showDigit(1, 0, FALSE);
-      usleep(t);
-      showDigit(2, 0, FALSE);
-      usleep(t);
-      showDigit(3, wendu / 10, FALSE);
-      usleep(t);
-      showDigit(4, wendu % 10, FALSE);
+      if (wendu < 0) {
+        // 显示负号
+        usleep(t);
+        showDigit(2, 99, FALSE);
+
+        // 数字取正数部分再显示
+        usleep(t);
+        showDigit(3, (0-wendu) / 10, FALSE);
+        usleep(t);
+        showDigit(4, (0-wendu) % 10, FALSE);
+      } else {
+        usleep(t);
+        showDigit(3, wendu / 10, FALSE);
+        usleep(t);
+        showDigit(4, wendu % 10, FALSE);
+      }
+      
     } else {
-      usleep(t);
-      showDigit(1, 0, FALSE);
-      usleep(t);
-      showDigit(2, 0, TRUE);
       usleep(t);
       showDigit(3, shidu / 10, FALSE);
       usleep(t);
@@ -200,6 +201,7 @@ void readDHT11() {
     // GPIO口模式设置为输出模式
     pinMode (DATA, OUTPUT) ;
 
+    // 先拉高DATA一段时间，准备发送开始指令
     digitalWrite (DATA, HIGH);
     usleep(500000);  // 500 ms
 
@@ -211,8 +213,6 @@ void readDHT11() {
     // 开始指令输出完毕，切换到输入模式，等待DHT11输出信号。
     // 由于有上拉电阻的存在，所以DATA口会维持高电平。
     pinMode (DATA, INPUT);
-    for (i = 0; i < 5; ++i)
-    {}
 
     // 在DATA口被拉回至高电平通知DHT11主机已经准备好接受数据以后，
     // DHT11还会继续等待20-40us左右以后才会开始发送反馈信号，所以我们把这段时间跳过去
@@ -256,14 +256,7 @@ void readDHT11() {
     {
       // 每一个bit的数据（0或者1）总是由一段持续50us的低电平信号开始
       // 跟上面一样我们用循环检测的方式跳过这一段
-      //cnt = 0;
       while (digitalRead(DATA) == LOW) {
-        /*cnt++;
-        if (cnt > MAXCNT)
-        {
-         printf("DHT11未响应，请检查连线是否正确，元件是否正常工作。\n");
-         exit(1);
-        }*/
       }
 
       // 接下来的高电平持续的时间是判断该bit是0还是1的关键。
@@ -314,6 +307,7 @@ void readDHT11() {
       {
         data[i/8] |= 1;
       }
+      //下面这句话就是用来测试自己的设备应该设定多少阈值的测试代码
       //printf("bits[%d] = %d (%d) \n", i, bits[i], bits[i]>200?1:0 );
     }
 
@@ -332,7 +326,7 @@ void readDHT11() {
       break;
     } else {
       printf("校验不成功，重新取值！ \n");
-      // 校验不成功，重新取值，连续10次取值不成功就放弃。一般连线正确的话连续10次取值出错是不可能的。
+      // 校验不成功，重新取值，连续10次取值不成功就放弃。一般连线和逻辑正确的话连续10次取值出错是不可能的。
       continue;
     }
   }
@@ -424,6 +418,15 @@ void showDigit(int no, int num, int showDotPoint) {
     digitalWrite (LED_D, LOW) ;
     digitalWrite (LED_E, HIGH) ;
     digitalWrite (LED_F, LOW) ;
+    digitalWrite (LED_G, LOW) ;
+  // 显示负号用
+  } else if (num == 99) {
+    digitalWrite (LED_A, HIGH) ;
+    digitalWrite (LED_B, HIGH) ;
+    digitalWrite (LED_C, HIGH) ;
+    digitalWrite (LED_D, HIGH) ;
+    digitalWrite (LED_E, HIGH) ;
+    digitalWrite (LED_F, HIGH) ;
     digitalWrite (LED_G, LOW) ;
   }
   
