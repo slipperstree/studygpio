@@ -20,9 +20,9 @@ int data[5];
 void readDHT11();
 
 int main (void) {
-  printf("%d,%d\n", 68, 23 );
-  //wiringPiSetup () ;
-  //readDHT11();
+  //printf("%d,%d\n", 68, 23 );
+  wiringPiSetup () ;
+  readDHT11();
   return 0 ;
 }
 
