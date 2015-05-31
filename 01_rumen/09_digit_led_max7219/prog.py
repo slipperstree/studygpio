@@ -85,10 +85,10 @@ def setIntensity(mode = 15):
 	setBitData(True)
 	
 	if (mode == 15) :
+		setBitData(False)
 		setBitData(True)
-		setBitData(True)
-		setBitData(True)
-		setBitData(True)
+		setBitData(False)
+		setBitData(False)
 	else :
 		# TODO
 		print "TODO"
@@ -203,137 +203,118 @@ def setDisplayTestMode(mode = 0):
 
 # 指定no(1-4)号数码管显示数字num(0-9)，第三个参数是显示不显示小数点（true/false）
 def showDigit(no, num, showDotPoint):
-	
-	if (num == 0) :
-		setBitData(not showDotPoint)
+
+	RPi.GPIO.output(LOAD, False)
+
+	if (no == 1) :
+		# 指令寄存器地址设置：0xX1
+		# D15-D12:任意
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		# D11-D8: 0,0,0,1
+		setBitData(False)
+		setBitData(False)
+		setBitData(False)
+		setBitData(True)
+	elif (no == 2) :
+		# 指令寄存器地址设置：0xX2
+		# D15-D12:任意
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		# D11-D8: 0,0,1,0
+		setBitData(False)
+		setBitData(False)
+		setBitData(True)
+		setBitData(False)
+	elif (no == 3) :
+		# 指令寄存器地址设置：0xX3
+		# D15-D12:任意
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		# D11-D8: 0,0,1,1
+		setBitData(False)
+		setBitData(False)
+		setBitData(True)
+		setBitData(True)
+	elif (no == 4) :
+		# 指令寄存器地址设置：0xX4
+		# D15-D12:任意
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
+		# D11-D8: 0,1,0,0
+		setBitData(False)
 		setBitData(True)
 		setBitData(False)
 		setBitData(False)
+
+	# D7:显示小数点（1点亮）
+	setBitData(showDotPoint)
+	# D6-D4:任意
+	setBitData(True)
+	setBitData(True)
+	setBitData(True)
+
+	# D3-D0
+	if (num == 0) :
 		setBitData(False)
 		setBitData(False)
 		setBitData(False)
 		setBitData(False)
 	elif (num == 1) :
-		setBitData(not showDotPoint)
-		setBitData(True)
-		setBitData(True)
-		setBitData(True)
-		setBitData(True)
+		setBitData(False)
 		setBitData(False)
 		setBitData(False)
 		setBitData(True)
 	elif (num == 2) :
-		setBitData(not showDotPoint)
-		setBitData(False)
-		setBitData(True)
 		setBitData(False)
 		setBitData(False)
 		setBitData(True)
-		setBitData(False)
 		setBitData(False)
 	elif (num == 3) :
-		setBitData(not showDotPoint)
+		setBitData(False)
 		setBitData(False)
 		setBitData(True)
 		setBitData(True)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
 	elif (num == 4) :
-		setBitData(not showDotPoint)
-		setBitData(False)
 		setBitData(False)
 		setBitData(True)
-		setBitData(True)
 		setBitData(False)
 		setBitData(False)
-		setBitData(True)
 	elif (num == 5) :
-		setBitData(not showDotPoint)
-		setBitData(False)
 		setBitData(False)
 		setBitData(True)
 		setBitData(False)
-		setBitData(False)
 		setBitData(True)
-		setBitData(False)
 	elif (num == 6) :
-		setBitData(not showDotPoint)
 		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
+		setBitData(True)
 		setBitData(True)
 		setBitData(False)
 	elif (num == 7) :
-		setBitData(not showDotPoint)
-		setBitData(True)
-		setBitData(True)
-		setBitData(True)
-		setBitData(True)
 		setBitData(False)
-		setBitData(False)
-		setBitData(False)
+		setBitData(True)
+		setBitData(True)
+		setBitData(True)
 	elif (num == 8) :
-		setBitData(not showDotPoint)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
+		setBitData(True)
 		setBitData(False)
 		setBitData(False)
 		setBitData(False)
 	elif (num == 9) :
-		setBitData(not showDotPoint)
-		setBitData(False)
-		setBitData(False)
 		setBitData(True)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-	
-	if (no == 1) :
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(True)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-	elif (no == 2) :
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(True)
-		setBitData(False)
-		setBitData(False)
-	elif (no == 3) :
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(True)
-		setBitData(False)
-	elif (no == 4) :
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
-		setBitData(False)
 		setBitData(False)
 		setBitData(False)
 		setBitData(True)
 
 	RPi.GPIO.output(LOAD, True)
-	RPi.GPIO.output(LOAD, False)
 
 def setBitData(data):
 	RPi.GPIO.output(CLK, False)
@@ -341,25 +322,18 @@ def setBitData(data):
 	RPi.GPIO.output(CLK, True)
 
 try:
-	t=0.005
 	setShutdownMode()
 	setDecodeMode()
 	setIntensity()
 	setScanLimit()
-	
-	setDisplayTestMode(1)
-	
-	#while True:
-	#	time.sleep(1)
-	#while True:
-	#	time.sleep(t)
-	#	showDigit(1, int(time.strftime("%H",time.localtime(time.time()))) / 10, False)
-	#	time.sleep(t)
-	#	showDigit(2, int(time.strftime("%H",time.localtime(time.time()))) % 10, True)
-	#	time.sleep(t)
-	#	showDigit(3, int(time.strftime("%M",time.localtime(time.time()))) / 10, False)
-	#	time.sleep(t)
-	#	showDigit(4, int(time.strftime("%M",time.localtime(time.time()))) % 10, False)
+	setDisplayTestMode()
+
+	while True:
+		showDigit(1, int(time.strftime("%H",time.localtime(time.time()))) / 10, False)
+		showDigit(2, int(time.strftime("%H",time.localtime(time.time()))) % 10, True)
+		showDigit(3, int(time.strftime("%M",time.localtime(time.time()))) / 10, False)
+		showDigit(4, int(time.strftime("%M",time.localtime(time.time()))) % 10, False)
+		time.sleep(10)
 			
 except KeyboardInterrupt:
 	pass
