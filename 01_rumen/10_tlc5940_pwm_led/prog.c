@@ -62,7 +62,7 @@ int main (void) {
   pinMode (DCPRG, OUTPUT) ;
   pinMode (GSCLK, OUTPUT) ;
 
-/*  // VPRG设置为L，使其工作在GS mode
+  // VPRG设置为L，使其工作在GS mode
   digitalWrite (VPRG, LOW) ;
 
   // BLANK设置为H，关闭所有输出
@@ -81,51 +81,51 @@ int main (void) {
   }
 
   // OUT2
-  n=3;
-  for (i = 0; i < 12-n; ++i)
+  n=11;
+  for (i = 0; i < n; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
 
   // OUT1
-  n=3;
-  for (i = 0; i < 12-n; ++i)
+  n=8;
+  for (i = 0; i < n; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
 
   // OUT0
-  n=3;
-  for (i = 0; i < 12-n; ++i)
+  n=5;
+  for (i = 0; i < n; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
@@ -133,10 +133,10 @@ int main (void) {
 
   // 送完GS数据后，创造XLAT的上升沿，将移位寄存器的数据一次性送入GS寄存器
   digitalWrite (XLAT, LOW) ;
-  digitalWrite (SCLK, HIGH) ;
+  digitalWrite (XLAT, HIGH) ;
 
   // BLANK设置为L，打开所有输出
-  digitalWrite (BLANK, LOW) ;*/
+  digitalWrite (BLANK, LOW) ;
 
   // 准备工作完毕，下面向GSCLK输送时钟信号（高低电平交互的方波信号）
   // TLC5940会根据这个时钟信号进行从0-4095的计数，一边计数一边检查各GSn的设定值，一旦到达GSn的值，则切换OUTn的电平
@@ -158,7 +158,7 @@ void runGSCLK() {
   n=0;
   while(1){
     n+=1;
-    if (n>=4096) {
+    if (n>=2000) {
       // 注意，每次计数到4095时需要手动重置一次芯片的计数器
       digitalWrite (BLANK, HIGH) ;
       digitalWrite (BLANK, LOW) ;

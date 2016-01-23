@@ -16,14 +16,14 @@ def runGSCLK():
 	i=0
 	while(1):
 		i+=1
-		if i>=4096:
+		if i>=1000:
 			# 注意，每次计数到4095时需要手动重置一次芯片的计数器
-			GPIO.output(BLANK,1)
-			GPIO.output(BLANK,0)
+			GPIO.output(BLANK, True)
+			GPIO.output(BLANK, False)
 			i=0
 		else:
-			GPIO.output(GSCLK,1)
-			GPIO.output(GSCLK,0)
+			GPIO.output(GSCLK, True)
+			GPIO.output(GSCLK, False)
 
 try:
 	GPIO.setmode(GPIO.BCM)
