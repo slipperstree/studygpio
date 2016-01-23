@@ -1,8 +1,9 @@
 ﻿#!/usr/bin/env python
 # encoding: utf-8
-
+import sys
 import RPi.GPIO
 import time
+import subprocess
 
 # 串行数据输入
 DIN = 13
@@ -12,12 +13,6 @@ LOAD = 26
 
 # 打入信号————上升沿有效
 CLK = 19
-
-RPi.GPIO.setmode(RPi.GPIO.BCM)
-
-RPi.GPIO.setup(DIN, RPi.GPIO.OUT)
-RPi.GPIO.setup(LOAD, RPi.GPIO.OUT)
-RPi.GPIO.setup(CLK, RPi.GPIO.OUT)
 
 # 传输一个8位数
 def setByte(byteData):
@@ -158,12 +153,193 @@ def setBitData(data):
 	RPi.GPIO.output(DIN, data)
 	RPi.GPIO.output(CLK, True)
 
+def showHeart1():
+
+	data = [
+		0b00000000,
+		0b01101100,
+		0b10010010,
+		0b10000010,
+		0b01000100,
+		0b00101000,
+		0b00010000,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showHeart2():
+
+	data = [
+		0b00000000,
+		0b00000000,
+		0b00101000,
+		0b01010100,
+		0b00101000,
+		0b00010000,
+		0b00000000,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showPlay():
+
+	data = [
+		0b00100000,
+		0b00110000,
+		0b00111000,
+		0b00111100,
+		0b00111000,
+		0b00110000,
+		0b00100000,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showNext():
+
+	data = [
+		0b00100010,
+		0b00110010,
+		0b00111010,
+		0b00111110,
+		0b00111010,
+		0b00110010,
+		0b00100010,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showVolup():
+
+	data = [
+		0b00000000,
+		0b10001000,
+		0b10001000,
+		0b10001000,
+		0b10001010,
+		0b01010111,
+		0b00100010,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showVoldown():
+
+	data = [
+		0b00000000,
+		0b10001000,
+		0b10001000,
+		0b10001000,
+		0b10001000,
+		0b01010111,
+		0b00100000,
+		0b00000000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+def showRnd():
+
+	data = [
+		0b00111000,
+		0b01000100,
+		0b01000100,
+		0b00001000,
+		0b00010000,
+		0b00010000,
+		0b00000000,
+		0b00010000
+		]
+
+	for no in range(1,9):
+		RPi.GPIO.output(LOAD, False)
+		# 设置指令寄存器地址：0xX1-0xX8
+		setByte(no)
+		# 设置显示内容
+		setByte(data[no-1])
+		RPi.GPIO.output(LOAD, True)
+
+# 闪烁指定次数指定间隔
+def flash(cnt,t):
+	for x in xrange(0,cnt):
+		setShutdownMode(0)
+		time.sleep(t)
+		setShutdownMode(1)
+		time.sleep(t)
+
 try:
+	# 参数检查
+	if (len(sys.argv)==1):
+		exit()
+
+	cmd=sys.argv[1]
+
+	if cmd == 'playPause':
+		pass
+	elif cmd == 'volup':
+		pass
+	elif cmd == 'voldown':
+		pass
+	elif cmd == 'next':
+		pass
+	elif cmd == 'prev':
+		pass
+	elif cmd == 'rnd':
+		pass
+	else:
+		exit()
+
+	RPi.GPIO.setmode(RPi.GPIO.BCM)
+	RPi.GPIO.setup(DIN, RPi.GPIO.OUT)
+	RPi.GPIO.setup(LOAD, RPi.GPIO.OUT)
+	RPi.GPIO.setup(CLK, RPi.GPIO.OUT)
+
 	# 测试代码，亮度使用最低亮度，显示从0开始递增的数字。
 	# print "=====================setShutdownMode====================="
 	setShutdownMode()
-	# print "=====================setDecodeMode====================="
-	setDecodeMode()
+	# 完全不使用译码模式
+	setDecodeMode(1)
 	# print "=====================setIntensity====================="
 	setIntensity(1)
 	# print "=====================setScanLimit====================="
@@ -171,20 +347,31 @@ try:
 	# print "=====================setDisplayTestMode====================="
 	setDisplayTestMode()
 
-	n=0
-	while True:
-		n=n+1
-		showDigit(8, int(n)%10, False)
-		showDigit(7, int(n/10)%10, False)
-		showDigit(6, int(n/100)%10, False)
-		showDigit(5, int(n/1000)%10, False)
-		showDigit(4, int(n/10000)%10, False)
-		showDigit(3, int(n/100000)%10, False)
-		showDigit(2, int(n/1000000)%10, False)
-		showDigit(1, int(n/10000000)%10, False)
-		time.sleep(0.01)
+	p = subprocess.Popen('touch /home/pi/_musicbox_cmd_' + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+	if cmd == 'playPause':
+		showPlay()
+		flash(3, 0.2)
+	elif cmd == 'volup':
+		showVolup()
+		flash(1, 0.2)
+	elif cmd == 'voldown':
+		showVoldown()
+		flash(1, 0.2)
+	elif cmd == 'next':
+		showNext()
+		flash(3, 0.2)
+	elif cmd == 'prev':
+		showNext()
+		flash(3, 0.2)
+	elif cmd == 'rnd':
+		showRnd()
+		flash(3, 0.2)
+	else:
+		exit()
+
 except KeyboardInterrupt:
 	pass
 
 # 最后清理GPIO口（不做也可以，建议每次程序结束时清理一下，好习惯）
-RPi.GPIO.cleanup()
+# RPi.GPIO.cleanup()
