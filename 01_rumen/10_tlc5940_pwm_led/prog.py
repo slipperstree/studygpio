@@ -11,14 +11,37 @@ BLANK=23
 DCPRG=18
 GSCLK=4
 
+# 传输GSData(0-4095)
+def setGSData(data):
+	# print ""
+	# print "S-----------setByte---------------:", hex(data)
+	for bit in range(0,12):
+		# 传入的数字从高位到低位依次判断是否为1，若为1则设置高电平，否则设置低电平
+		# 判断的方法是先向左移位，把要判断的位移动到最高位然后跟0x800（1000 0000 0000）相与，
+		# 如果结果仍然是0x80（1000 0000 0000）就表示最高位是1，否则最高位就是0
+		if ((data<<bit) & 0x800 == 0x800):
+			setBitData(True)
+			# print "1",
+		else:
+			setBitData(False)
+			# print "0",
+	# print ""
+	# print "E-----------setByte---------------"
+
+def setBitData(data):
+	GPIO.output(SCLK, False)
+	GPIO.output(SIN, data)
+	GPIO.output(SCLK, True)
+
 # 输出GSCLK时钟信号
 def runGSCLK():
 	i=0
 	while(1):
 		i+=1
-		if i>=1000:
+		if i>=4096:
 			# 注意，每次计数到4095时需要手动重置一次芯片的计数器
 			GPIO.output(BLANK, True)
+			#time.sleep(0.001);
 			GPIO.output(BLANK, False)
 			i=0
 		else:
@@ -47,60 +70,35 @@ try:
 	# 每组数据的值范围是0-4095
 	# 因为是通过移位寄存器传输，所以传送顺序是倒序的：GS15，GS14。。。GS0
 	# GSn决定了OUTn的PWM调宽。（GSn / 4095 = 0% - 100%）
-	for x in xrange(0,192-36):
-		GPIO.output(SIN, False)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
+	setGSData(0) # GS15 本文不使用15-3号输出，设为0
+	setGSData(0) # GS14
+	setGSData(0) # GS13
+	setGSData(0) # GS12
+	setGSData(0) # GS11
+	setGSData(0) # GS10
+	setGSData(0) # GS9
+	setGSData(0) # GS8
+	setGSData(0) # GS7
+	setGSData(0) # GS6
+	setGSData(0) # GS5
+	setGSData(0) # GS4
+	setGSData(0) # GS3
+	
+	# print "GS2"
+	setGSData(4095) # GS2
 
-	# OUT2
-	n=10
-	for x in xrange(0,12-n):
-		GPIO.output(SIN, False)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
+	# print "GS1"
+	setGSData(2500) # GS1
 
-	for x in xrange(0,n):
-		GPIO.output(SIN, True)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
-
-	# OUT1
-	n=8
-	for x in xrange(0,12-n):
-		GPIO.output(SIN, False)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
-
-	for x in xrange(0,n):
-		GPIO.output(SIN, True)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
-
-	# OUT0
-	n=6
-	for x in xrange(0,12-n):
-		GPIO.output(SIN, False)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
-
-	for x in xrange(0,n):
-		GPIO.output(SIN, True)
-		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
-		GPIO.output(SCLK, False)
-		GPIO.output(SCLK, True)
+	# print "GS0"
+	setGSData(500) # GS0
 
 	# 送完GS数据后，创造XLAT的上升沿，将移位寄存器的数据一次性送入GS寄存器
 	GPIO.output(XLAT, False)
 	GPIO.output(XLAT, True)
 
 	# BLANK设置为L，打开所有输出
-	GPIO.output(BLANK, False)
+	# GPIO.output(BLANK, False)
 
 	# 准备工作完毕，下面向GSCLK输送时钟信号（高低电平交互的方波信号）
 	# TLC5940会根据这个时钟信号进行从0-4095的计数，一边计数一边检查各GSn的设定值，一旦到达GSn的值，则切换OUTn的电平
@@ -119,4 +117,4 @@ except KeyboardInterrupt:
 	pass
 
 # 清理GPIO口
-RPi.GPIO.cleanup()
+GPIO.cleanup()
