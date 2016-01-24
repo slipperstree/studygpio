@@ -6,10 +6,10 @@ import time
 VPRG=17
 SIN=13
 SCLK=19
-XLAT=4
+XLAT=27
 BLANK=23
 DCPRG=18
-GSCLK=21
+GSCLK=4
 
 # 输出GSCLK时钟信号
 def runGSCLK():
@@ -41,6 +41,8 @@ try:
 	# BLANK设置为H，关闭所有输出
 	GPIO.output(BLANK, True)
 
+	GPIO.output(DCPRG, True)
+
 	# 传送12bit X 16组PWM数值GSn(n=0-15)，共192bit
 	# 每组数据的值范围是0-4095
 	# 因为是通过移位寄存器传输，所以传送顺序是倒序的：GS15，GS14。。。GS0
@@ -52,7 +54,7 @@ try:
 		GPIO.output(SCLK, True)
 
 	# OUT2
-	n=4
+	n=10
 	for x in xrange(0,12-n):
 		GPIO.output(SIN, False)
 		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
@@ -66,7 +68,7 @@ try:
 		GPIO.output(SCLK, True)
 
 	# OUT1
-	n=6
+	n=8
 	for x in xrange(0,12-n):
 		GPIO.output(SIN, False)
 		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
@@ -80,7 +82,7 @@ try:
 		GPIO.output(SCLK, True)
 
 	# OUT0
-	n=11
+	n=6
 	for x in xrange(0,12-n):
 		GPIO.output(SIN, False)
 		# 创造SCLK的上升沿，写SIN数据到移位寄存器中
@@ -116,3 +118,5 @@ try:
 except KeyboardInterrupt:
 	pass
 
+# 清理GPIO口
+RPi.GPIO.cleanup()

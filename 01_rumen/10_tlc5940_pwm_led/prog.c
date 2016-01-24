@@ -38,10 +38,10 @@
 #define VPRG 0    //BCM：17
 #define SIN  23   //BCM：13
 #define SCLK 24   //BCM：19
-#define XLAT 7    //BCM：4
+#define XLAT 2    //BCM：27
 #define BLANK 4   //BCM：23
 #define DCPRG 1   //BCM：18
-#define GSCLK 29  //BCM：21
+#define GSCLK 7   //BCM：4
 
 #define FALSE 0
 #define TRUE  1
@@ -68,6 +68,8 @@ int main (void) {
   // BLANK设置为H，关闭所有输出
   digitalWrite (BLANK, HIGH) ;
 
+  digitalWrite (DCPRG, HIGH) ;
+
   // 传送12bit X 16组PWM数值GSn(n=0-15)，共192bit
   // 每组数据的值范围是0-4095
   // 因为是通过移位寄存器传输，所以传送顺序是倒序的：GS15，GS14。。。GS0
@@ -81,34 +83,34 @@ int main (void) {
   }
 
   // OUT2
-  n=11;
-  for (i = 0; i < n; ++i)
+  n=5;
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < 12-n; ++i)
+  for (i = 0; i < 12; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
 
   // OUT1
-  n=8;
-  for (i = 0; i < n; ++i)
+  n=5;
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < 12-n; ++i)
+  for (i = 0; i < n; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
@@ -116,16 +118,16 @@ int main (void) {
 
   // OUT0
   n=5;
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < 12-n; ++i)
   {
-    digitalWrite (SIN, HIGH) ;
+    digitalWrite (SIN, LOW) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
   }
-  for (i = 0; i < 12-n; ++i)
+  for (i = 0; i < n; ++i)
   {
-    digitalWrite (SIN, LOW) ;
+    digitalWrite (SIN, HIGH) ;
     // 创造SCLK的上升沿，写SIN数据到移位寄存器中
     digitalWrite (SCLK, LOW) ;
     digitalWrite (SCLK, HIGH) ;
@@ -158,7 +160,7 @@ void runGSCLK() {
   n=0;
   while(1){
     n+=1;
-    if (n>=2000) {
+    if (n>=1000) {
       // 注意，每次计数到4095时需要手动重置一次芯片的计数器
       digitalWrite (BLANK, HIGH) ;
       digitalWrite (BLANK, LOW) ;
