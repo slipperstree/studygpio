@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
  
 import RPi.GPIO as GPIO
 import time
@@ -31,22 +31,6 @@ def setBitData(data):
 	GPIO.output(sda, data)
 	GPIO.output(scl, True)
 
-def LCD_CtrlWrite_IC(ctlData):
-	GPIO.output(cs, False)
-	GPIO.output(rs, False)
-	setByteData(ctlData)
-	GPIO.output(cs, True)
-
-def LCD_DataWrite_IC(data):
-	GPIO.output(cs, False)
-	GPIO.output(rs, True)
-	setByteData(data)
-	GPIO.output(cs, True)
-
-def LCD_DataWrite(LCD_DataH, LCD_DataL):
-	LCD_DataWrite_IC(LCD_DataH)
-	LCD_DataWrite_IC(LCD_DataL)
-
 def write_command(cmd):
 	GPIO.output(cs, False)
 	GPIO.output(rs, False)
@@ -59,17 +43,18 @@ def write_data(data):
 	setByteData(data)
 	GPIO.output(cs, True)
 
-def Reset():
+def write_data_16bit(dataH, dataL):
+	write_data(dataH)
+	write_data(dataL)
+
+def lcd_reset():
     GPIO.output(reset, False)
     time.sleep(0.1)
     GPIO.output(reset, True)
     time.sleep(0.1)
 
 def lcd_initial():
-	GPIO.output(reset, False)
-	time.sleep(0.1)
-	GPIO.output(reset, True)
-	time.sleep(0.1)
+	lcd_reset()
 
 	#------------------------------------------------------------------#   
 	#-------------------Software Reset-------------------------------# 
@@ -149,17 +134,43 @@ def lcd_initial():
 def dsp_single_colour(DH,DL):
 	for i in xrange(0,128):
 		for j in xrange(0,128):
-			LCD_DataWrite(DH,DL)
+			write_data_16bit(DH,DL)
 
 try:
 	GPIO.setmode(GPIO.BCM)
+	GPIO.setup(cs, GPIO.OUT)
+	GPIO.setup(rs, GPIO.OUT)
+	GPIO.setup(sda, GPIO.OUT)
+	GPIO.setup(scl, GPIO.OUT)
+	GPIO.setup(reset, GPIO.OUT)
 	
 	lcd_initial()
-    write_command(0x2C)
-    dsp_single_colour(0x00,0x1f) # 蓝色背景
+	write_command(0x2C)
+
+	# 绘制七色彩条
+	for i in xrange(0,128):
+		for j in xrange(0,18*1):
+			write_data_16bit(0xf8,0x00)
+		for j in xrange(18*1,18*2):
+			write_data_16bit(0xfb,0xe4)
+		for j in xrange(18*2,18*3):
+			write_data_16bit(0xff,0x80)
+		for j in xrange(18*3,18*4):
+			write_data_16bit(0x07,0xE0)
+		for j in xrange(18*4,18*5):
+			write_data_16bit(0x00,0x1f)
+		for j in xrange(18*5,18*6):
+			write_data_16bit(0x05,0x1d)
+		for j in xrange(18*6,128):
+			write_data_16bit(0xa2,0x54)
+
+	#dsp_single_colour(0xf8,0x00) # 蓝色背景
+
+	while True:
+		pass
 
 except KeyboardInterrupt:
 	pass
 
 # 清理GPIO口
-GPIO.cleanup()
+# GPIO.cleanup()
