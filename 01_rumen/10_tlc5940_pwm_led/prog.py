@@ -44,9 +44,6 @@ def runGSCLK():
 			#time.sleep(0.001);
 			GPIO.output(BLANK, False)
 			i=0
-		else:
-			GPIO.output(GSCLK, True)
-			GPIO.output(GSCLK, False)
 
 try:
 	GPIO.setmode(GPIO.BCM)
@@ -56,7 +53,10 @@ try:
 	GPIO.setup(XLAT, GPIO.OUT)
 	GPIO.setup(BLANK, GPIO.OUT)
 	GPIO.setup(DCPRG, GPIO.OUT)
-	GPIO.setup(GSCLK, GPIO.OUT)
+	
+	GPIO.setup(GSCLK, GPIO.ALT0)
+	GPIO.setclock(GSCLK, 9600000)
+	GPIO.output(GSCLK, True)
 
 	# VPRG设置为L，使其工作在GS mode
 	GPIO.output(VPRG, False)

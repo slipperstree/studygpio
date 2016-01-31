@@ -48,8 +48,7 @@
 
 int i,n=0;
 
-// 输出GSCLK时钟信号
-void runGSCLK();
+void resetBLACK();
 
 int main (void) {
   wiringPiSetup () ;
@@ -60,7 +59,15 @@ int main (void) {
   pinMode (XLAT, OUTPUT) ;
   pinMode (BLANK, OUTPUT) ;
   pinMode (DCPRG, OUTPUT) ;
-  pinMode (GSCLK, OUTPUT) ;
+
+  // 注意，这里我们设置输出模式为时钟模式
+  // 在这个模式下，GPIO4引脚可以稳定高速的输出时钟信号（方波），并且不会额外占用CPU资源
+  // 可以使用这个模式的引脚只有GPIO4，这个引脚是树莓派硬件支持时钟信号输出的
+  pinMode (GSCLK, GPIO_CLOCK) ;
+
+  // 设置时钟频率，最高19.2MHz，或者是19.2Mhz的n分频，这里我们设置GSCLK为2.4MHz（19.2Mhz/8）
+  // 设置BLANK为585Hz （2.4Mhz/4096）
+  gpioClockSet (GSCLK, 9600000) ;
 
   // VPRG设置为L，使其工作在GS mode
   digitalWrite (VPRG, LOW) ;
@@ -83,7 +90,7 @@ int main (void) {
   }
 
   // OUT2
-  n=5;
+  n=11;
   for (i = 0; i < 12-n; ++i)
   {
     digitalWrite (SIN, LOW) ;
@@ -100,7 +107,7 @@ int main (void) {
   }
 
   // OUT1
-  n=5;
+  n=9;
   for (i = 0; i < 12-n; ++i)
   {
     digitalWrite (SIN, LOW) ;
@@ -151,23 +158,20 @@ int main (void) {
   // 所以我们应该至少给GSCLK提供不低于50 X 4095 = 200KHz的方波。
   // 树莓派Python的GPIO库翻转IO口的速度不高，实测速度只能达到60KHz，
   // 导致最后输出的PWM频率只有14Hz，会有明显的闪烁感
-  runGSCLK();
+  // 后来查了相关资料，发现树莓派GPIO4是硬件支持时钟信号输出的，速度可达到19.2Mhz，于是本文采用此方法
+  resetBLACK();
 
   return 0 ;
 }
 
-void runGSCLK() {
+void resetBLACK() {
   n=0;
   while(1){
     n+=1;
-    if (n>=1000) {
-      // 注意，每次计数到4095时需要手动重置一次芯片的计数器
+    if (n>=4000) {
       digitalWrite (BLANK, HIGH) ;
       digitalWrite (BLANK, LOW) ;
       n=0;
-    } else {
-      digitalWrite (GSCLK, HIGH) ;
-      digitalWrite (GSCLK, LOW) ;
     }
   }
 }
