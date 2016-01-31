@@ -53,7 +53,7 @@ def lcd_reset():
     GPIO.output(reset, True)
     time.sleep(0.1)
 
-def lcd_initial():
+def lcd_init():
 	lcd_reset()
 
 	#------------------------------------------------------------------#   
@@ -131,10 +131,23 @@ def lcd_initial():
 	write_command(0x29) #  Display On
 	write_command(0x2C)
 
-def dsp_single_colour(DH,DL):
+def show_single_color(DH,DL):
 	for i in xrange(0,128):
 		for j in xrange(0,128):
 			write_data_16bit(DH,DL)
+
+def setDotColor(x, y, color):
+	write_command(0x2a)
+	write_data(x)
+	write_data(x)
+
+	write_command(0x2b)
+	write_data(y)
+	write_data(y)
+
+	write_command(0x2c)
+	write_data_16bit(color>>8, color&0xff)
+
 
 try:
 	GPIO.setmode(GPIO.BCM)
@@ -144,17 +157,27 @@ try:
 	GPIO.setup(scl, GPIO.OUT)
 	GPIO.setup(reset, GPIO.OUT)
 	
-	lcd_initial()
+	lcd_init()
 	write_command(0x2C)
 
+	#show_single_color(0xff, 0xe0)
+
+	for i in xrange(20, 40):
+		for j in xrange(50, 90):
+			setDotColor(i, j, 0x001F)
+
+	time.sleep(5)
+
 	# 绘制七色彩条
-	for i in xrange(0,128):
+	# 颜色是16位颜色，下面这个网站可以取各种颜色的颜色代码
+	# http://hello.lumiere-couleur.com/app/16bit-colorpicker/
+	for i in xrange(0,0):
 		for j in xrange(0,18*1):
 			write_data_16bit(0xf8,0x00)
 		for j in xrange(18*1,18*2):
-			write_data_16bit(0xfb,0xe4)
+			write_data_16bit(0xeb,0xc0)
 		for j in xrange(18*2,18*3):
-			write_data_16bit(0xff,0x80)
+			write_data_16bit(0xff,0xe0)
 		for j in xrange(18*3,18*4):
 			write_data_16bit(0x07,0xE0)
 		for j in xrange(18*4,18*5):
@@ -162,15 +185,13 @@ try:
 		for j in xrange(18*5,18*6):
 			write_data_16bit(0x05,0x1d)
 		for j in xrange(18*6,128):
-			write_data_16bit(0xa2,0x54)
+			write_data_16bit(0xe8,0x18)
 
-	#dsp_single_colour(0xf8,0x00) # 蓝色背景
-
-	while True:
-		pass
+	#while True:
+	#	pass
 
 except KeyboardInterrupt:
 	pass
 
 # 清理GPIO口
-# GPIO.cleanup()
+#GPIO.cleanup()
