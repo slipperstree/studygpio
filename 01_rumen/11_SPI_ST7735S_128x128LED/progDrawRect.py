@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
  
 import RPi.GPIO as GPIO
 import time
+import random
 
 cs=23		# 片选
 rs=17		# 数据 / 命令 切换
@@ -155,19 +156,19 @@ def drawRect(startX, startY, endX, endY, color_16bit):
 		endY = startY
 
 	colorH_8bit = color_16bit>>8
-	colorL_8bit = color_16bit&0xff>>8
+	colorL_8bit = color_16bit&0xff
 	
 	write_command(0x2a)
-	write_data(startX)
-	write_data(endX)
+	write_data_16bit(startX>>8, startX&0xff)
+	write_data_16bit(endX>>8, endX&0xff)
 
 	write_command(0x2b)
-	write_data(startY)
-	write_data(endY)
+	write_data_16bit(startY>>8, startY&0xff)
+	write_data_16bit(endY>>8, endY&0xff)
 
 	write_command(0x2c)
-	for i in xrange(startX, startY+1):
-		for j in xrange(endX, endY+1):
+	for i in xrange(startX, endX+1):
+		for j in xrange(startY, endY+1):
 			write_data_16bit(colorH_8bit, colorL_8bit)
 
 try:
@@ -179,12 +180,18 @@ try:
 	GPIO.setup(reset, GPIO.OUT)
 	
 	lcd_init()
+	write_command(0x2c)
 
-	drawRect(0,0, 20,20, 0xf800)
-	drawRect(20,20, 40,40, 0xebc0)
-	drawRect(40,40, 60,60, 0xffe0)
-	drawRect(60,60, 80,80, 0x07e0)
-	drawRect(80,80, 127,127, 0x001f)
+	while (True):
+		sx = random.randint(0,127)
+		ex = sx + 30
+		sy = random.randint(0,127)
+		ey = sy + 30
+		drawRect(sx,
+			sy, 
+			ex,
+			ey,
+			random.randint(0,65535))
 
 except KeyboardInterrupt:
 	pass

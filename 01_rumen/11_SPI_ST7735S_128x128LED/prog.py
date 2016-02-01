@@ -160,11 +160,14 @@ try:
 	lcd_init()
 	write_command(0x2C)
 
-	#show_single_color(0xff, 0xe0)
-
-	for i in xrange(20, 40):
-		for j in xrange(50, 90):
-			setDotColor(i, j, 0x001F)
+	show_single_color(0xf8, 0x00)
+        time.sleep(3)
+	write_command(0x21)
+	time.sleep(3)
+	write_command(0x20)
+	#for i in xrange(20, 40):
+	#	for j in xrange(50, 90):
+	#		setDotColor(i, j, 0x001F)
 
 	time.sleep(5)
 
