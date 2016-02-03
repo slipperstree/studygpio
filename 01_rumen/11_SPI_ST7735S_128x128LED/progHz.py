@@ -292,7 +292,7 @@ try:
 	lcd_init()
 	write_command(0x2c)
 
-	show_single_color(0,0)
+	show_single_color(0xff,0xff)
 
 	p = Point()
 	p.x = 30
@@ -301,7 +301,7 @@ try:
 	# 一次性将字库全部读入内存
 	zk=np.fromfile('HZK16.dat', dtype='b')
 	
-	text = "你好，世界。"
+	text = "你好，世界"
 	# 取得文本的字数
 	cnt=len(text.decode('utf-8'))
 	for i in range(0, cnt):
@@ -312,8 +312,8 @@ try:
 		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0xffff, 0xf800)
 
 	p.x = 0
-	p.y = 25
-	text = "使用树莓派的GPIO来驱动一块液晶显示屏的例子。————芒果爱吃胡萝卜"
+	p.y = 30
+	text = "使用树莓派的ＧＰＩＯ来驱动一块液晶显示屏的例子。Ｂｙ：芒果爱吃胡萝卜"
 	# 取得文本的字数
 	cnt=len(text.decode('utf-8'))
 	for i in range(0, cnt):
