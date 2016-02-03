@@ -4,20 +4,20 @@ import RPi.GPIO as GPIO
 import time
 import random
 
-cs=23		# 片选
-rs=17		# 数据 / 命令 切换
-sda=13		# 数据
-scl=19		# 时钟
-reset=27	# 复位
+cs=23		# Ƭѡ
+rs=17		# ���� / ���� �л�
+sda=13		# ����
+scl=19		# ʱ��
+reset=27	# ��λ
 
-# 传输byte
+# ����byte
 def setByteData(data):
 	# print ""
 	# print "S-----------setByte---------------:", hex(data)
 	for bit in range(0,8):
-		# 传入的数字从高位到低位依次判断是否为1，若为1则设置高电平，否则设置低电平
-		# 判断的方法是先向左移位，把要判断的位移动到最高位然后跟0x80（1000 0000）相与，
-		# 如果结果仍然是0x80（1000 0000）就表示最高位是1，否则最高位就是0
+		# ��������ִӸ�λ����λ�����ж��Ƿ�Ϊ1����Ϊ1�����øߵ�ƽ���������õ͵�ƽ
+		# �жϵķ�������������λ����Ҫ�жϵ�λ�ƶ������λȻ���0x80��1000 0000�����룬
+		# ��������Ȼ��0x80��1000 0000���ͱ�ʾ���λ��1���������λ����0
 		if ((data<<bit) & 0x80 == 0x80):
 			setBitData(True)
 			# print "1",
@@ -177,19 +177,19 @@ def getHZ_32Bytes(hz):
 	
 	gb=hz.decode('utf-8').encode('gb2312')
 
-	print '汉字:' + hz,
+	print '����:' + hz,
 	
-	# 区码
+	# ����
 	codeQu = struct.unpack('B', gb[0])[0]
-	print '区码:' + str(codeQu) + ', ',
+	print '����:' + str(codeQu) + ', ',
 
-	# 位码
+	# λ��
 	codeWei = struct.unpack('B', gb[1])[0]
-	print '位码:' + str(codeWei) + ', ',
+	print 'λ��:' + str(codeWei) + ', ',
 
-	# 字节偏移值（非位偏移值）
+	# �ֽ�ƫ��ֵ����λƫ��ֵ��
 	offset = ((codeQu - 0xa1) * 94 + codeWei - 0xa1) * 32
-	print '偏移值:' + str(offset)
+	print 'ƫ��ֵ:' + str(offset)
 	
 	for i in range(offset, offset+32):
 		retBytes32.append(zk[i])
@@ -242,7 +242,7 @@ try:
 	# read zk to memory
 	zk=np.fromfile('HZK16.dat', dtype='b')
 	
-	s = "口"
+	s = "��"
 
 	lcd_init()
 	write_command(0x2c)
@@ -255,5 +255,5 @@ try:
 except KeyboardInterrupt:
 	pass
 
-# 清理GPIO口
+# ����GPIO��
 #GPIO.cleanup()
