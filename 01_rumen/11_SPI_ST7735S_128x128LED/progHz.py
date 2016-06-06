@@ -293,7 +293,7 @@ try:
 	lcd_init()
 	write_command(0x2c)
 
-	show_single_color(0xff,0xff)
+	show_single_color(0x00,0x00)
 
 	p = Point()
 	p.x = 30
@@ -310,7 +310,7 @@ try:
 		# 第一次调用时设置一个初始位置
 		# 每次绘制完一个汉字，返回值里存放的是下一个汉字的绘制开始位置
 		# 如此循环往复，直到所有汉字全部显示完毕或者显示到边界无法继续显示为止
-		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0xffff, 0xf800)
+		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0x0000, 0xf800)
 
 	p.x = 0
 	p.y = 30
@@ -322,7 +322,7 @@ try:
 		# 第一次调用时设置一个初始位置
 		# 每次绘制完一个汉字，返回值里存放的是下一个汉字的绘制开始位置
 		# 如此循环往复，直到所有汉字全部显示完毕或者显示到边界无法继续显示为止
-		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0xffff, 0x001f)
+		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0x0000, 0xff80)
 
 except KeyboardInterrupt:
 	pass

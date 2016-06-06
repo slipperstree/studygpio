@@ -152,9 +152,105 @@ def drawRect(startX, startY, endX, endY, color_16bit):
 	write_data_16bitHL(endY)
 
 	write_command([0x2c])
-	for i in xrange(startX, endX+1):
-		for j in xrange(startY, endY+1):
-			write_data_16bitHL(color_16bit)
+	dataArray = []
+
+	maxSendBuff = 2048
+	if (endX-startX+1) * (endY-startY+1) < 2048:
+		maxSendBuff = (endX-startX+1) * (endY-startY+1);
+
+	color_H = color_16bit>>8
+	color_L = color_16bit&0xff
+	for n in xrange(0,maxSendBuff):
+		dataArray.append(color_H)
+		dataArray.append(color_L)
+
+	GPIO.output(cs, False)
+	GPIO.output(rs, True)
+
+	for n in xrange(0,(endX-startX) * (endY-startY) / maxSendBuff + 1):
+		spiSendData(dataArray)
+
+	GPIO.output(cs, True)
+
+# startX, startY, endX, endY:0-127
+def drawRectFrame(startX, startY, endX, endY, width, color_16bit):
+	if (startX > 127):
+		startX = 127
+	if (startY > 127):
+		startY = 127
+	if (endX > 127):
+		endX = 127
+	if (endY > 127):
+		endY = 127
+	if (endX < startX):
+		endX = startX
+	if (endY < startY):
+		endY = startY
+
+	dataArray = []
+
+	color_H = color_16bit>>8
+	color_L = color_16bit&0xff
+
+	GPIO.output(cs, False)
+	GPIO.output(rs, True)
+
+	maxSendBuff = 2048
+
+	# top, bottom
+	if (endX-startX+1) * width < 2048:
+		maxSendBuff = (endX-startX+1) * width;
+	print 'maxSendBuff=' + str(maxSendBuff)
+	# top
+	write_command([0x2a])
+	write_data_16bitHL(startX)
+	write_data_16bitHL(endX)
+
+	write_command([0x2b])
+	write_data_16bitHL(startY)
+	write_data_16bitHL(startY + width - 1)
+
+	print 'startX=' + str(startX)
+	print 'endX=' + str(endX)
+	print 'startY=' + str(startY)
+	print 'endY=' + str(startY + width - 1)
+
+	write_command([0x2c])
+
+	dataArray = []
+	for n in xrange(0,maxSendBuff):
+		dataArray.append(color_H)
+		dataArray.append(color_L)
+
+	print '(endX-startX+1) * width / maxSendBuff + 1=' + str((endX-startX+1) * width / maxSendBuff + 1)
+	for n in xrange(0,(endX-startX+1) * width / maxSendBuff + 1):
+		spiSendData(dataArray)
+
+	# # bottom
+	# write_command([0x2a])
+	# write_data_16bitHL(startX)
+	# write_data_16bitHL(endX)
+
+	# write_command([0x2b])
+	# write_data_16bitHL(endY - width + 1)
+	# write_data_16bitHL(endY)
+
+	# write_command([0x2c])
+
+	# dataArray = []
+	# for n in xrange(0,maxSendBuff):
+	# 	dataArray.append(color_H)
+	# 	dataArray.append(color_L)
+
+	# for n in xrange(0,(endX-startX+1) * width / maxSendBuff + 1):
+	# 	spiSendData(dataArray)
+
+	GPIO.output(cs, True)
+
+	# 由于spi发送函数每次发送字节数有4096的限制，这里我们填充的是16位的数据，所以上限减半每次取2048个元素发送
+	#for n in xrange(0,(endX-startX) * (endY-startY), 1000):
+	#	write_data(dataArray[n:n+1000])
+
 
 # 从读取到内存里的字库中取得单个汉字的点阵信息，并保存在一个字节数组里
 # 某个汉字的点阵信息在字库里的开始位置(字节偏移值)可以通过以下公式计算出来，这个是固定的
@@ -4403,19 +4499,63 @@ try:
 	lcd_init()
 	write_command([0x2c])
 
-	#while True:
-	#	resp = spi.xfer2([0x03])
-	#	print resp[0]
+	drawRect(0, 0, 127, 127, 0x0000)
+	drawRectFrame(40, 40, 80, 80, 2, 0xf800)
 
-	#drawRect(20,20, 50, 50, 0x001f)
-	drawPic()
-	time.sleep(3)
-	drawMario()
-	time.sleep(3)
-	drawPic()
-	time.sleep(3)
-	drawMario()
-	time.sleep(3)
+	# drawRect(0, 0, 127, 20, 0xfd79)
+	# drawRect(0, 21, 127, 40, 0x07e0)
+	# drawRect(0, 41, 127, 60, 0xff80)
+	# drawRect(0, 61, 127, 80, 0x9edd)
+	# drawRect(0, 81, 127, 100, 0xe8c4)
+	# drawRect(0, 101, 127, 127, 0x7497)
+
+	# # moving cube test ------------------------------
+	# drawRect(0, 0, 127, 127, 0xffff)
+	# drawRect(0, 0, 20, 20, 0xff80)
+	# drawRect(0, 0, 20, 20, 0xff80)
+
+	# for z in xrange(1,5):
+	# 	for x in xrange(1,107):
+	# 		time.sleep(0.01)
+	# 		drawRect(x-1, 0, x-1, 20, 0xffff)
+	# 		drawRect(x+21, 0, x+21, 20, 0xff80)
+
+	# 	for x in xrange(107,1,-1):
+	# 		time.sleep(0.01)
+	# 		drawRect(x-1, 0, x-1, 20, 0xff80)
+	# 		drawRect(x+21, 0, x+21, 20, 0xffff)
+	# # moving cube test ------------------------------
+	
+
+	# for x in xrange(100,0,-1):
+	# 	time.sleep(0.1)
+	# 	drawRect(0, 0, 127, 127, 0xffff)
+	# 	drawRect(x, 0, x+20, 20, 0xFBE4)
+	
+	#drawPic()
+	#time.sleep(3)
+	#drawMario()
+	#time.sleep(3)
+	#drawPic()
+	#time.sleep(3)
+	#drawMario()
+	#time.sleep(3)
+
+	# 一次性将字库全部读入内存
+	#zk=np.fromfile('HZK16.dat', dtype='b')
+
+	#p = Point()
+	#p.x = 0
+	#p.y = 30
+	#text = "使用树莓派的ＧＰＩＯ来驱动一块液晶显示屏的例子。Ｂｙ：芒果爱吃胡萝卜"
+	# 取得文本的字数
+	#cnt=len(text.decode('utf-8'))
+	#for i in range(0, cnt):
+		# 逐字调用绘制单个汉字的函数
+		# 第一次调用时设置一个初始位置
+		# 每次绘制完一个汉字，返回值里存放的是下一个汉字的绘制开始位置
+		# 如此循环往复，直到所有汉字全部显示完毕或者显示到边界无法继续显示为止
+	#	p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), 0x0000, 0xff80)
 
 	spi.close()
 
