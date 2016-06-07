@@ -185,6 +185,19 @@ def drawLine(startX, startY, endX, endY, color_16bit):
             y=int((x-startX)*(endY-startY)/(endX-startX))+startY
             setDotColor(x, y, color_16bit)
 
+def drawText(startX, startY, text, bit16Backcolor, bit16Fontcolor):
+	p = Point()
+	p.x = startX
+	p.y = startY
+	# 取得文本的字数
+	cnt=len(text.decode('utf-8'))
+	for i in range(0, cnt):
+		#逐字调用绘制单个汉字的函数
+		#第一次调用时设置一个初始位置
+		#每次绘制完一个汉字，返回值里存放的是下一个汉字的绘制开始位置
+		#如此循环往复，直到所有汉字全部显示完毕或者显示到边界无法继续显示为止
+		p = drawHz16x16(p, getHZ_32Bytes(text[i*3:i*3+3]), bit16Backcolor, bit16Fontcolor)
+
 
 # 从读取到内存里的字库中取得单个汉字的点阵信息，并保存在一个字节数组里
 # 某个汉字的点阵信息在字库里的开始位置(字节偏移值)可以通过以下公式计算出来，这个是固定的
@@ -4431,16 +4444,31 @@ try:
 	GPIO.setup(reset, GPIO.OUT)
 
 	lcd_init()
-	write_command([0x2c])
 
+	zk=np.fromfile('HZK16.dat', dtype='b')
+
+	# backcolor
 	drawRect(0, 0, 127, 127, 0x0000)
-	drawRectFrame(40, 40, 80, 80, 6, 0xf800)
-	drawRectFrame(20, 50, 70, 90, 1, 0x7497)
-	drawLine(0, 0 , 127, 127, 0xffff)
-	drawLine(0, 0 , 127, 100, 0xffff)
-	drawLine(0, 0 , 127, 80, 0xffff)
-	drawLine(0, 0 , 127, 60, 0xffff)
-	drawLine(0, 0 , 127, 40, 0xffff)
+
+	# date
+	drawText(0,0, "２０１６／６／８", 0x0000, 0xf800)
+	drawRect(0, 20, 127, 20, 0xffff)
+
+	drawText(0,25, "１２：５３ＡＭ", 0x0000, 0x07e0)
+	drawRect(0, 45, 127, 45, 0xffff)
+
+	drawText(0,50, "天气：晴", 0x0000, 0xe8c4)
+	drawText(0,70, "温度：２１度", 0x0000, 0x7497)
+	drawText(0,90, "风力：５级", 0x0000, 0x9edd)
+	drawRect(0, 110, 127, 110, 0xffff)
+
+	# drawRectFrame(40, 40, 80, 80, 6, 0xf800)
+	# drawRectFrame(20, 50, 70, 90, 1, 0x7497)
+	# drawLine(0, 0 , 127, 127, 0xffff)
+	# drawLine(0, 0 , 127, 100, 0xffff)
+	# drawLine(0, 0 , 127, 80, 0xffff)
+	# drawLine(0, 0 , 127, 60, 0xffff)
+	# drawLine(0, 0 , 127, 40, 0xffff)
 
 	# drawRect(0, 0, 127, 20, 0xfd79)
 	# drawRect(0, 21, 127, 40, 0x07e0)
