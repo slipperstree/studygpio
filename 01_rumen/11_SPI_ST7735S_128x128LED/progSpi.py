@@ -174,10 +174,16 @@ def drawRect(startX, startY, endX, endY, color_16bit):
 
 # startX, startY, endX, endY:0-127
 def drawRectFrame(startX, startY, endX, endY, width, color_16bit):
+	width -= 1
 	drawRect(startX, startY, endX, startY+width, color_16bit)
 	drawRect(endX-width, startY, endX, endY, color_16bit)
 	drawRect(startX, endY-width, endX, endY, color_16bit)
 	drawRect(startX, startY, startX+width, endY, color_16bit)
+
+def drawLine(startX, startY, endX, endY, color_16bit):
+	for x in range(startX, endX):
+            y=int((x-startX)*(endY-startY)/(endX-startX))+startY
+            setDotColor(x, y, color_16bit)
 
 
 # 从读取到内存里的字库中取得单个汉字的点阵信息，并保存在一个字节数组里
@@ -4428,7 +4434,13 @@ try:
 	write_command([0x2c])
 
 	drawRect(0, 0, 127, 127, 0x0000)
-	drawRectFrame(40, 40, 80, 80, 2, 0xf800)
+	drawRectFrame(40, 40, 80, 80, 6, 0xf800)
+	drawRectFrame(20, 50, 70, 90, 1, 0x7497)
+	drawLine(0, 0 , 127, 127, 0xffff)
+	drawLine(0, 0 , 127, 100, 0xffff)
+	drawLine(0, 0 , 127, 80, 0xffff)
+	drawLine(0, 0 , 127, 60, 0xffff)
+	drawLine(0, 0 , 127, 40, 0xffff)
 
 	# drawRect(0, 0, 127, 20, 0xfd79)
 	# drawRect(0, 21, 127, 40, 0x07e0)
