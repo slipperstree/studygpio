@@ -174,82 +174,10 @@ def drawRect(startX, startY, endX, endY, color_16bit):
 
 # startX, startY, endX, endY:0-127
 def drawRectFrame(startX, startY, endX, endY, width, color_16bit):
-	if (startX > 127):
-		startX = 127
-	if (startY > 127):
-		startY = 127
-	if (endX > 127):
-		endX = 127
-	if (endY > 127):
-		endY = 127
-	if (endX < startX):
-		endX = startX
-	if (endY < startY):
-		endY = startY
-
-	dataArray = []
-
-	color_H = color_16bit>>8
-	color_L = color_16bit&0xff
-
-	GPIO.output(cs, False)
-	GPIO.output(rs, True)
-
-	maxSendBuff = 2048
-
-	# top, bottom
-	if (endX-startX+1) * width < 2048:
-		maxSendBuff = (endX-startX+1) * width;
-	print 'maxSendBuff=' + str(maxSendBuff)
-	# top
-	write_command([0x2a])
-	write_data_16bitHL(startX)
-	write_data_16bitHL(endX)
-
-	write_command([0x2b])
-	write_data_16bitHL(startY)
-	write_data_16bitHL(startY + width - 1)
-
-	print 'startX=' + str(startX)
-	print 'endX=' + str(endX)
-	print 'startY=' + str(startY)
-	print 'endY=' + str(startY + width - 1)
-
-	write_command([0x2c])
-
-	dataArray = []
-	for n in xrange(0,maxSendBuff):
-		dataArray.append(color_H)
-		dataArray.append(color_L)
-
-	print '(endX-startX+1) * width / maxSendBuff + 1=' + str((endX-startX+1) * width / maxSendBuff + 1)
-	for n in xrange(0,(endX-startX+1) * width / maxSendBuff + 1):
-		spiSendData(dataArray)
-
-	# # bottom
-	# write_command([0x2a])
-	# write_data_16bitHL(startX)
-	# write_data_16bitHL(endX)
-
-	# write_command([0x2b])
-	# write_data_16bitHL(endY - width + 1)
-	# write_data_16bitHL(endY)
-
-	# write_command([0x2c])
-
-	# dataArray = []
-	# for n in xrange(0,maxSendBuff):
-	# 	dataArray.append(color_H)
-	# 	dataArray.append(color_L)
-
-	# for n in xrange(0,(endX-startX+1) * width / maxSendBuff + 1):
-	# 	spiSendData(dataArray)
-
-	GPIO.output(cs, True)
-
-	# 由于spi发送函数每次发送字节数有4096的限制，这里我们填充的是16位的数据，所以上限减半每次取2048个元素发送
-	#for n in xrange(0,(endX-startX) * (endY-startY), 1000):
-	#	write_data(dataArray[n:n+1000])
+	drawRect(startX, startY, endX, startY+width, color_16bit)
+	drawRect(endX-width, startY, endX, endY, color_16bit)
+	drawRect(startX, endY-width, endX, endY, color_16bit)
+	drawRect(startX, startY, startX+width, endY, color_16bit)
 
 
 # 从读取到内存里的字库中取得单个汉字的点阵信息，并保存在一个字节数组里
