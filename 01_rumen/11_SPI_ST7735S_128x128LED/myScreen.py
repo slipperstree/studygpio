@@ -206,9 +206,11 @@ def drawText(startX, startY, text, bit16Backcolor, bit16Fontcolor):
 		#判断方法是将当前的unicode编码的字符或汉字转换成gb2312码，再判断长度，全角汉字为2，半角字符为1
 		gb2312Char = utext[i].encode("gb2312")
 		if (len(gb2312Char) == 2):
-			p = drawHz16x16(p, getHZ_32Bytes(gb2312Char), bit16Backcolor, bit16Fontcolor)
+			# 16 X 16 汉字点阵
+			p = drawHz(p, getHZ_32Bytes(gb2312Char), 16, 16, bit16Backcolor, bit16Fontcolor)
 		else:
-			p = drawHz16x16(p, getASC_16Bytes(gb2312Char), bit16Backcolor, bit16Fontcolor)
+			# 16 X 8 ASCII点阵
+			p = drawHz(p, getASC_16Bytes(gb2312Char), 16, 8, bit16Backcolor, bit16Fontcolor)
 
 
 # 从读取到内存里的字库中取得单个汉字的点阵信息，并保存在一个字节数组里
@@ -262,8 +264,8 @@ def getASC_16Bytes(gb):
 
 	print 'ASCII字符:' + unicode(gb, "gb2312").encode("utf8"),
 
-	# 字节偏移值 = （ASCII码 - 0x20）× 16
-	offset = (ord(gb) - 0x20) * 16
+	# 字节偏移值 = ASCII码 × 16
+	offset = ord(gb) * 16
 	print '偏移值:' + str(offset)
 	
 	# 从偏移值位置开始，向后连续取16个字节数据，即该ASCII的点阵数据。
@@ -278,7 +280,7 @@ class Point:
 
 # 显示单个汉字函数
 # 为方便调用，第一个参数是一个简单的class，包含了x和y两个信息，用于返回下一个汉字的显示位置
-def drawHz16x16(pStart, byteArray32Hz, bit16Backcolor, bit16Fontcolor):
+def drawHz(pStart, byteArrayHz, fontH, fontW, bit16Backcolor, bit16Fontcolor):
 	pNext = Point()
 
 	# 检查显示位置是否有效，如果超出显示范围直接退出
@@ -288,31 +290,30 @@ def drawHz16x16(pStart, byteArray32Hz, bit16Backcolor, bit16Fontcolor):
 		pStart.y=0
 
 	# 如果右侧已经无法显示一个完整的文字则试图换行
-	if (pStart.x>128-16):
+	if (pStart.x>128-fontW):
 		# 换行前还要检查下方有无空位显示一行
-		if (pStart.y>128-16):
+		if (pStart.y>128-fontH):
 			# 若下方已不足一行的行高则显示结束
 			return pNext
 		else:
 			# 若下方可以继续显示新行，则换行。x坐标移到最左边0，y坐标下移一个汉字的高度
-			pNext.x = 0
-			pNext.y = pStart.y + 16
-	# 如果右侧还有空位则继续显示
+			pStart.x = 0
+			pStart.y = pStart.y + fontH
+	# 如果右侧还有空位则不换行在当前指定位置显示
 	else:
-		pNext.x = pStart.x + 16
-		pNext.y = pStart.y
+		pass
 
 	# 命令：0X2A
 	# 设置绘图区域左上角的x坐标和右下角的x坐标（注意都是x坐标）
 	write_command([0x2a])
 	write_data_16bitHL(pStart.x)
-	write_data_16bitHL(pStart.x+15)
+	write_data_16bitHL(pStart.x+fontW-1)
 
 	# 命令：0X2B
 	# 设置绘图区域左上角的y坐标和右下角的y坐标（注意都是y坐标）
 	write_command([0x2b])
 	write_data_16bitHL(pStart.y)
-	write_data_16bitHL(pStart.y+15)
+	write_data_16bitHL(pStart.y+fontH-1)
 
 	# 命令：0X2C
 	# 开始在绘图区域绘图，每次绘制一个像素点的颜色，指针会自动移动到下一个像素点
@@ -320,15 +321,19 @@ def drawHz16x16(pStart, byteArray32Hz, bit16Backcolor, bit16Fontcolor):
 	# 由于之前使用命令2a和2b限制了绘图区域，所以指针到达右侧边界时会自动回到最左边并向下移动一个像素（像素换行）
 	# 我们把汉字的点阵数据进行逐位判断，0的时候像素点绘制背景色，1的时候像素点绘制字体色即可。
 	write_command([0x2c])
-	for i in range(0, 32):
-		byteHz=byteArray32Hz[i]
+	for i in range(0, len(byteArrayHz)):
+		byteHz=byteArrayHz[i]
 		for j in range(0, 8):
 			if ((byteHz << j) & 0x80):
+				# TODO 性能有待提高，不要一个像素一个像素的传输，应该全部缓存在一个大字节数组里一次性用spi
 				write_data_16bitHL(bit16Fontcolor)
 			else:
+				# TODO 性能有待提高，不要一个像素一个像素的传输，应该全部缓存在一个大字节数组里一次性用spi
 				write_data_16bitHL(bit16Backcolor)
 
-	
+	# 返回当前汉字显示的结束位置，便于下一个汉字计算开始位置，判断换行等。。。
+	pNext.x = pStart.x + fontW
+	pNext.y = pStart.y
 
 	return pNext
 
@@ -350,22 +355,22 @@ try:
 
 	lcd_init()
 
-	zk=np.fromfile('HZK16K.dat', dtype='b')
+	zk=np.fromfile('HZK16.dat', dtype='b')
 	zkASC16=np.fromfile('ASC16.dat', dtype='b')
 
 	# backcolor
 	drawRect(0, 0, 127, 127, 0x0000)
 
 	# date
-	drawText(0,0, "２０１６／６／８", 0x0000, 0xf800)
+	drawText(0,0, "2016年06月09日", 0x0000, 0xf800)
 	drawRect(0, 20, 127, 20, 0xffff)
 
-	drawText(0,25, "１２：５３ＡＭ", 0x0000, 0x07e0)
+	drawText(0,25, "01:47 AM", 0x0000, 0x07e0)
 	drawRect(0, 45, 127, 45, 0xffff)
 
 	drawText(0,50, "天气：晴", 0x0000, 0xe8c4)
-	drawText(0,70, "温度：２１度", 0x0000, 0x7497)
-	drawText(0,90, "风力：５级", 0x0000, 0x9edd)
+	drawText(0,70, "温度：21度", 0x0000, 0x7497)
+	drawText(0,90, "风力：3级", 0x0000, 0x9edd)
 	drawRect(0, 110, 127, 110, 0xffff)
 
 	# drawRectFrame(40, 40, 80, 80, 6, 0xf800)
