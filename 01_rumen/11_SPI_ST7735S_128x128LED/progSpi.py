@@ -4445,7 +4445,7 @@ try:
 
 	lcd_init()
 
-	zk=np.fromfile('HZK16.dat', dtype='b')
+	zk=np.fromfile('HZK16K.dat', dtype='b')
 
 	# backcolor
 	drawRect(0, 0, 127, 127, 0x0000)
