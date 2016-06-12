@@ -7,6 +7,13 @@ import numpy as np
 import struct
 import random
 import spidev
+import json
+import datetime
+import urllib2
+
+import cStringIO
+import zlib
+from PIL import Image
 
 cs=23		# 片选
 rs=17		# 数据 / 命令 切换
@@ -191,7 +198,10 @@ def drawText(startX, startY, text, bit16Backcolor, bit16Fontcolor):
 	p.y = startY
 	
 	# 先将汉字从utf-8方式解码成unicode形式
-	utext = unicode(text, "utf8")
+	if isinstance(text, unicode):
+		utext = text
+	else:
+		utext = unicode(text, "utf8")
 
 	# 取得文本的字数
 	cnt=len(utext)
@@ -278,6 +288,18 @@ class Point:
         self.x = -1
         self.y = -1
 
+class Weather:
+    def __init__(self):
+    	self.datetime = -1
+        self.temp = -1
+        self.temp_min = -1
+        self.temp_max = -1
+        self.description = -1
+        self.icon = -1
+        self.iconPixArray = -1
+        self.cloudiness = -1
+        self.windspeed = -1
+
 # 显示单个汉字函数
 # 为方便调用，第一个参数是一个简单的class，包含了x和y两个信息，用于返回下一个汉字的显示位置
 def drawHz(pStart, byteArrayHz, fontH, fontW, bit16Backcolor, bit16Fontcolor):
@@ -337,6 +359,74 @@ def drawHz(pStart, byteArrayHz, fontH, fontW, bit16Backcolor, bit16Fontcolor):
 
 	return pNext
 
+def drawImg(x, y, width, height, rgb565Array):
+	# 命令：0X2A
+	# 设置绘图区域左上角的x坐标和右下角的x坐标（注意都是x坐标）
+	write_command([0x2a])
+	write_data_16bitHL(x)
+	write_data_16bitHL(x+width-1)
+
+	# 命令：0X2B
+	# 设置绘图区域左上角的y坐标和右下角的y坐标（注意都是y坐标）
+	write_command([0x2b])
+	write_data_16bitHL(y)
+	write_data_16bitHL(y+height-1)
+
+	# 命令：0X2C
+	write_command([0x2c])
+	buffSize = 2000
+	GPIO.output(cs, False)
+	GPIO.output(rs, True)
+	for x in xrange(0,len(rgb565Array) / buffSize+1):
+		spiSendData(rgb565Array[x*buffSize:x*buffSize+buffSize])
+
+	GPIO.output(cs, True)
+
+# Ret: "height", "width", "rgb565Array[]"
+def getWebImageByteArray(url):
+	content=urllib2.urlopen(url)
+	file = cStringIO.StringIO(content.read())
+	img = Image.open(file)
+	pix = img.load()
+
+	h = img.size[1]
+	w = img.size[0]
+	ret = {"height" : h , "width" : w, "rgb565Array" : []}
+	for y in xrange(0, h):
+		for x in xrange(0, w):
+			r = pix[x, y][0] # 0xFF 1111 1111 -> 1111 1000
+			g = pix[x, y][1] # 0x64 0110 0100 -> 0110 0000
+			b = pix[x, y][2] # 0x32 0011 0010 -> 0011 0000
+
+			# Desired result:
+			#           R      G     B
+			# 0xFB26 |11111 011|001 00110|
+			#          BYTE1      BYTE2
+			ret["rgb565Array"].append((r & 0xF8) | (g >> 5))
+			ret["rgb565Array"].append((g<<3 & 0xE0) | (b >> 3))
+
+	return ret
+
+def getWeather():
+	# 这样取得的字符串是unicode类型
+	ret=urllib2.urlopen("http://api.openweathermap.org/data/2.5/forecast?q=Tokyo&units=metric&lang=zh_cn&APPID=db392ef3a3478e0a62cdfca71ef82b1d")
+	oJson = json.load(ret)
+
+	oWeather = Weather()
+	oWeather.datetime = datetime.datetime.fromtimestamp(oJson["list"][0]["dt"])
+	oWeather.temp = int(oJson["list"][0]["main"]["temp"])
+	oWeather.temp_min = int(oJson["list"][0]["main"]["temp_min"])
+	oWeather.temp_max = int(oJson["list"][0]["main"]["temp_max"])
+	oWeather.description = oJson["list"][0]["weather"][0]["description"]
+	
+	oWeather.icon = oJson["list"][0]["weather"][0]["icon"]
+	oWeather.iconPixArray = getWebImageByteArray("http://openweathermap.org/img/w/%s.png" % (oWeather.icon))
+
+	oWeather.cloudiness = oJson["list"][0]["clouds"]["all"]
+	oWeather.windspeed = oJson["list"][0]["wind"]["speed"]
+	print "datetime:%s, temp:%s, temp_min:%s, temp_max:%s, description:%s, icon:%s, cloudiness:%s, windspeed:%s" % (oWeather.datetime, oWeather.temp, oWeather.temp_min, oWeather.temp_max, oWeather.description, oWeather.icon, oWeather.cloudiness, oWeather.windspeed)
+	return oWeather
+
 try:
 	### 主程序开始 ###################################################
 	# 打开spi设备，此处设备为/dev/spi-decv0.0
@@ -353,25 +443,27 @@ try:
 	GPIO.setup(scl, GPIO.OUT)
 	GPIO.setup(reset, GPIO.OUT)
 
+	backcolor = 0xffff
+
 	lcd_init()
 
 	zk=np.fromfile('HZK16.dat', dtype='b')
 	zkASC16=np.fromfile('ASC16.dat', dtype='b')
 
 	# backcolor
-	drawRect(0, 0, 127, 127, 0x0000)
+	drawRect(0, 0, 127, 127, backcolor)
 
 	# date
-	drawText(0,0, "2016年06月09日", 0x0000, 0xf800)
-	drawRect(0, 20, 127, 20, 0xffff)
+	drawText(0,5, "2016/06/12 00:57", backcolor, 0xf800)
+	#drawRect(0, 20, 127, 20, 0xffff)
 
-	drawText(0,25, "01:47 AM", 0x0000, 0x07e0)
-	drawRect(0, 45, 127, 45, 0xffff)
+	oWeather = getWeather()
+	drawImg(0,20,oWeather.iconPixArray["width"], oWeather.iconPixArray["height"], oWeather.iconPixArray["rgb565Array"])
 
-	drawText(0,50, "天气：晴", 0x0000, 0xe8c4)
-	drawText(0,70, "温度：21度", 0x0000, 0x7497)
-	drawText(0,90, "风力：3级", 0x0000, 0x9edd)
-	drawRect(0, 110, 127, 110, 0xffff)
+	drawText(50,25, oWeather.description, backcolor, 0xe8c4)
+	drawText(50,45, "%s-%s度" % (oWeather.temp_min, oWeather.temp_max), backcolor, 0x7497)
+	drawText(0,65, "风力：%s米/秒" % (oWeather.windspeed), backcolor, 0x7497)
+	drawRect(0, 110, 127, 110, 0x0000)
 
 	# drawRectFrame(40, 40, 80, 80, 6, 0xf800)
 	# drawRectFrame(20, 50, 70, 90, 1, 0x7497)
