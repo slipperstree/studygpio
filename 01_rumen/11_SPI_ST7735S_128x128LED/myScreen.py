@@ -454,16 +454,22 @@ try:
 	drawRect(0, 0, 127, 127, backcolor)
 
 	# date
-	drawText(0,5, "2016/06/12 00:57", backcolor, 0xf800)
+	drawText(0,5, "2016/06/13 02:25", backcolor, 0xf800)
 	#drawRect(0, 20, 127, 20, 0xffff)
 
 	oWeather = getWeather()
 	drawImg(0,20,oWeather.iconPixArray["width"], oWeather.iconPixArray["height"], oWeather.iconPixArray["rgb565Array"])
 
-	drawText(50,25, oWeather.description, backcolor, 0xe8c4)
-	drawText(50,45, "%s-%s度" % (oWeather.temp_min, oWeather.temp_max), backcolor, 0x7497)
-	drawText(0,65, "风力：%s米/秒" % (oWeather.windspeed), backcolor, 0x7497)
-	drawRect(0, 110, 127, 110, 0x0000)
+	drawText(70,25, oWeather.description, backcolor, 0xe8c4)
+	drawText(60,48, "%s-%s度" % (oWeather.temp_min, oWeather.temp_max), backcolor, 0x7497)
+	drawText(0,70, "风力：%s米/秒" % (oWeather.windspeed), backcolor, 0x7497)
+	drawRect(0, 90, 127, 90, 0x0000)
+	drawRect(0, 92, 127, 93, 0x0000)
+	drawRect(0, 95, 127, 97, 0x0000)
+	drawRect(0, 99, 127, 102, 0x0000)
+	drawRect(0, 104, 127, 127, 0x0000)
+
+	drawText(0,107, "by芒果爱吃胡萝卜", 0x0000, 0xffff)
 
 	# drawRectFrame(40, 40, 80, 80, 6, 0xf800)
 	# drawRectFrame(20, 50, 70, 90, 1, 0x7497)
